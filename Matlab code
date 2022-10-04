@@ -1,0 +1,156 @@
+clear;
+close all;
+clc;
+R=input('radius of fuel rod  Dimension (cm)');
+d=input('thickness of clad Dimension (cm)');
+Rc=input('radius of coolant tank(Rc>R+d) Dimension (cm)');         
+Ro1=input('density of fuel rodDimension (g/(cm)^3)');
+Ro2=input('density of clad Dimension (g/(cm)^3)');
+Ro3=input('density of coolant Dimension (g/(cm)^3)');
+H1=input('height of fuel rod and clad Dimension (cm)');
+%%%%%%%%%%%%%fuel rod and clad have same height%%%%%%%%%%%%%%%%%%%%%%%
+H2=input('height of coolant tank Dimension (cm)');
+mf=input('mass number of fuel rod Dimension g/mol');
+mc=input('mass number of clad Dimension g/mol');
+mcc=input('mass number of coolant Dimension g/mol');
+micsig1=input('microscopic cross section of fuel rod Dimension barn');
+micsig2=input('microscopic cross section of clad Dimension barn');
+micsig3=input('microscopic cross section of coolant Dimension barn');
+n=input('N of particles');
+%%%%%%%%%%%%%%%%%%%%temperture is 25 centigrade%%%%%%%%%%%%%%%%%%%%%%%%%
+syms mocsig1 mocsig2 mocsig3
+mocsig1=(micsig1*10^-24)*((6.022*10^23)*Ro1)/mf;
+mocsig2=(micsig2*10^-24)*((6.022*10^23)*Ro2)/mc;
+mocsig3=(micsig3*10^-24)*((6.022*10^23)*Ro3)/mcc;
+%%%%%%%%%%%%%%%%%%%%%%first point to generated the particle%%%%%%%%%%%%
+B=[R R];
+N=150;
+[X,Y,Z]=cylinder(B,N);
+Z(1,:)=(H1)/2;
+Z(2,:)=(-H1)/2;
+xlabel('x axis')
+ylabel('y axis')
+zlabel('z axis')
+BB=[R+d R+d];
+[Q,W,E]=cylinder(BB,N);
+E(1,:)=(H1)/2;
+E(2,:)=(-H1)/2;
+B2=[Rc Rc];
+xlabel('x axis')
+ylabel('y axis')
+zlabel('z axis')
+[A,S,D]=cylinder(B2,N);
+D(1,:)=(H2)/2;
+D(2,:)=(-H2)/2;
+xlabel('x axis')
+ylabel('y axis')
+zlabel('z axis')
+for i=1:n
+fi=2*pi*rand;
+r=R*sqrt(rand);
+x0=r*cos(fi);
+y0=r*sin(fi);
+z0=(H1/2)*(rand*2-1);
+%%%%%%%%%%%%%%%%%%%genarat random particle%%%%%%%%%%%%%%%%%%%%%%%%%%%
+mu=rand*2-1;
+syms a b h l v u
+f=(x0+a*cos(fi)*sqrt(1-mu^2))^2+(y0+a*sin(fi)*sqrt(1-mu^2))^2-R^2;
+q=vpa(solve(f,a));
+w=q(q>0);
+%%%%%%%%%%%%%%%%%%%%%%%%disp(b)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+k=(H1/2)*(rand*2-1);
+g=z0+b*mu-k;
+c=vpa(solve(g,b));
+if c>=0
+    s1=min(w,c);
+else 
+    s1=w;
+end
+%%%%%%%%%%%%%%%x and y equation for find s1,s2,s3%%%%%%%%%%%%%%%%%%%%%%
+x1=x0+s1*(sqrt(1-mu^2))*cos(fi);
+y1=y0+s1*(sqrt(1-mu^2))*sin(fi);
+z1=z0+s1*mu;
+f1=(x1+h*cos(fi)*sqrt(1-mu^2))^2+(y1+h*sin(fi)*sqrt(1-mu^2))^2-(R+d)^2;
+q1=vpa(solve(f1,h));
+w1=q1(q1>0);
+%%%%%%%%%%%%%z equation equation for find s1,s2,s3%%%%%%%%%%%%%%%%%%%%%%%
+g1=z1+l*mu-k;
+c1=vpa(solve(g1,l));
+if c1>=0
+    s2=min(w1,c1);
+else
+    s2=w1;
+end
+%%%%%%%%%%%%% x and y equation for find s1,s2,s3%%%%%%%%%%%%%%%%%%%%%%%%%
+x2=x1+s2*(sqrt(1-mu^2))*cos(fi);
+y2=y1+s2*(sqrt(1-mu^2))*sin(fi);
+z2=z1+s2*mu;
+f2=(x2+v*cos(fi)*sqrt(1-mu^2))^2+(y2+v*sin(fi)*sqrt(1-mu^2))^2-(Rc)^2;
+q2=vpa(solve(f2,v));
+w2=q2(q2>0);
+%%%%%%%%%%%%%%%%%%%%%%z equation for find s1,s2,s3%%%%%%%%%%%%%%%%%%%%%%%
+k1=(H2/2)*rand*2-1;
+g2=z2+l*mu-k1;
+c2=vpa(solve(g2,l));
+if c2>=0
+    s3=min(w2,c2);
+else
+    s3=w2;
+end
+%%find landa and sp
+landa1=mocsig1*s1;
+landa2=mocsig2*s2;
+landa3=mocsig3*s3;
+landa=-log(rand);
+a1=0;
+a2=0;
+a3=0;
+if  landa<landa1
+    a1=a1+1;
+    sp=landa/mocsig1;
+    xp=sp*sqrt(1-mu^2)*cos(fi);
+    yp=sp*sqrt(1-mu^2)*sin(fi);
+    zp=sp*mu;
+    m1=[x0;xp];
+    m2=[y0;yp];
+    m3=[z0;zp];
+    plot3(m1, m2, m3);
+    title('intraction is in FUEL Cylinder');
+  elseif landa1<landa<=1(landa1+landa2)
+    a2=a2+1;
+    sp=(landa-landa1)/mocsig2;
+    xp=sp*sqrt(1-mu^2)*cos(fi);
+    yp=sp*sqrt(1-mu^2)*sin(fi);
+    zp=sp*mu;
+    m1=[x0;xp];
+    m2=[y0;yp];
+    m3=[z0;zp];
+    plot3(m1, m2, m3);
+   title('intraction is in clad Cylinder');
+  elseif (landa1)+(landa2)<landa<(landa1)+(landa2)+(landa3)
+    a3=a3+1;
+    sp=(landa-landa1-landa2)/mocsig3;
+    xp=sp*sqrt(1-mu^2)*cos(fi);
+    yp=sp*sqrt(1-mu^2)*sin(fi);
+    zp=sp*mu;
+    m1=[x0;xp];
+    m2=[y0;yp];
+    m3=[z0;zp];
+    plot3(m1, m2, m3);
+    title('intraction is in moderator Cylinder');
+  else
+    a4=a4+1;
+    hold on
+end
+hold on
+end 
+surf(X,Y,Z,'facecolor','k','facealpha',0.2,'edgcolor','none')
+surf(Q,W,E,'facecolor','k','facealpha',0.2,'edgcolor','none')
+surf(A,S,D,'facecolor','k','facealpha',0.2,'edgcolor','none')
+axis equal
+hold off
+
+
+
+
+
