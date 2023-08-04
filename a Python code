@@ -1,0 +1,141 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+R = float(input('radius of fuel rod Dimension (cm): '))
+d = float(input('thickness of clad Dimension (cm): '))
+Rc = float(input('radius of coolant tank (Rc>R+d) Dimension (cm): '))
+Ro1 = float(input('density of fuel rod Dimension (g/(cm)^3): '))
+Ro2 = float(input('density of clad Dimension (g/(cm)^3): '))
+Ro3 = float(input('density of coolant Dimension (g/(cm)^3): '))
+H1 = float(input('height of fuel rod and clad Dimension (cm): '))
+H2 = float(input('height of coolant tank Dimension (cm): '))
+mf = float(input('mass number of fuel rod Dimension g/mol: '))
+mc = float(input('mass number of clad Dimension g/mol: '))
+mcc = float(input('mass number of coolant Dimension g/mol: '))
+micsig1 = float(input('microscopic cross section of fuel rod Dimension barn: '))
+micsig2 = float(input('microscopic cross section of clad Dimension barn: '))
+micsig3 = float(input('microscopic cross section of coolant Dimension barn: '))
+n = int(input('N of particles: '))
+
+# Temperture is 25 centigrade
+T = 25
+
+mocsig1 = (micsig1 * 1e-24) * ((6.022 * 1e23) * Ro1) / mf
+mocsig2 = (micsig2 * 1e-24) * ((6.022 * 1e23) * Ro2) / mc
+mocsig3 = (micsig3 * 1e-24) * ((6.022 * 1e23) * Ro3) / mcc
+
+B = [R, R]
+N = 150
+theta = np.linspace(0, 2*np.pi, N)
+X = R * np.cos(theta)
+Y = R * np.sin(theta)
+Z = np.linspace(-H1/2, H1/2, 2)
+X, Z = np.meshgrid(X, Z)  # Convert 1D arrays to 2D
+
+BB = [R + d, R + d]
+Q = (R + d) * np.cos(theta)
+W = (R + d) * np.sin(theta)
+E = np.linspace(-H1/2, H1/2, 2)
+Q, E = np.meshgrid(Q, E)  # Convert 1D arrays to 2D
+
+B2 = [Rc, Rc]
+A = Rc * np.cos(theta)
+S = Rc * np.sin(theta)
+D = np.linspace(-H2/2, H2/2, 2)
+A, D = np.meshgrid(A, D)  # Convert 1D arrays to 2D
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.plot_surface(X, Y, np.ones_like(X) * Z[0], alpha=0.2)
+ax.plot_surface(X, Y, np.ones_like(X) * Z[1], alpha=0.2)
+ax.plot_surface(Q, W, np.ones_like(Q) * E[0], alpha=0.2)
+ax.plot_surface(Q, W, np.ones_like(Q) * E[1], alpha=0.2)
+ax.plot_surface(A, S, np.ones_like(A) * D[0], alpha=0.2)
+ax.plot_surface(A, S, np.ones_like(A) * D[1], alpha=0.2)
+
+for i in range(n):
+    fi = 2 * np.pi * np.random.rand()
+    r = R * np.sqrt(np.random.rand())
+    x0 = r * np.cos(fi)
+    y0 = r * np.sin(fi)
+    z0 = (H1 / 2) * (2 * np.random.rand() - 1)
+
+    mu = 2 * np.random.rand() - 1
+    a = 0
+    b = 0
+    h = 0
+    l = 0
+    v = 0
+    u = 0
+
+    f = (x0 + a * np.cos(fi) * np.sqrt(1 - mu ** 2)) ** 2 + (y0 + a * np.sin(fi) * np.sqrt(1 - mu ** 2)) ** 2 - R ** 2
+    q = np.roots([1, 0, 2 * x0 * np.cos(fi) * np.sqrt(1 - mu ** 2), f])
+    w = q[np.logical_and(q > 0, np.isreal(q))]
+
+    k = (H1 / 2) * (2 * np.random.rand() - 1)
+    g = z0 + b * mu - k
+    c = (-g + np.sqrt(g ** 2 - 4 * (k ** 2 - z0 * b * mu))) / 2
+
+    s1 = np.min([w, c]) if c >= 0 else w
+
+    x1 = x0 + s1 * np.sqrt(1 - mu ** 2) * np.cos(fi)
+    y1 = y0 + s1 * np.sqrt(1 - mu ** 2) * np.sin(fi)
+    z1 = z0 + s1 * mu
+
+    f1 = (x1 + h * np.cos(fi) * np.sqrt(1 - mu ** 2)) ** 2 + (y1 + h * np.sin(fi) * np.sqrt(1 - mu ** 2)) ** 2 - (R + d) ** 2
+    q1 = np.roots([1, 0, 2 * x1 * np.cos(fi) * np.sqrt(1 - mu ** 2), f1])
+    w1 = q1[np.logical_and(q1 > 0, np.isreal(q1))]
+
+    g1 = z1 + l * mu - k
+    c1 = (-g1 + np.sqrt(g1 ** 2 - 4 * (k ** 2 - z1 * l * mu))) / 2
+
+    s2 = np.min([w1, c1]) if c1 >= 0 else w1
+
+    x2 = x1 + s2 * np.sqrt(1 - mu ** 2) * np.cos(fi)
+    y2 = y1 + s2 * np.sqrt(1 - mu ** 2) * np.sin(fi)
+    z2 = z1 + s2 * mu
+
+    f2 = (x2 + v * np.cos(fi) * np.sqrt(1 - mu ** 2)) ** 2 + (y2 + v * np.sin(fi) * np.sqrt(1 - mu ** 2)) ** 2 - Rc ** 2
+    q2 = np.roots([1, 0, 2 * x2 * np.cos(fi) * np.sqrt(1 - mu ** 2), f2])
+    w2 = q2[np.logical_and(q2 > 0, np.isreal(q2))]
+
+    k1 = (H2 / 2) * (2 * np.random.rand() - 1)
+    g2 = z2 + l * mu - k1
+    c2 = (-g2 + np.sqrt(g2 ** 2 - 4 * (k1 ** 2 - z2 * l * mu))) / 2
+
+    s3 = np.min([w2, c2]) if c2 >= 0 else w2
+
+    landa1 = mocsig1 * s1
+    landa2 = mocsig2 * s2
+    landa3 = mocsig3 * s3
+    landa = -np.log(np.random.rand())
+
+    if landa < landa1:
+        a1 += 1
+        sp = landa / mocsig1
+        xp = sp * np.sqrt(1 - mu ** 2) * np.cos(fi)
+        yp = sp * np.sqrt(1 - mu ** 2) * np.sin(fi)
+        zp = sp * mu
+        ax.plot([x0, xp], [y0, yp], [z0, zp])
+    elif landa1 < landa <= (landa1 + landa2):
+        a2 += 1
+        sp = (landa - landa1) / mocsig2
+        xp = sp * np.sqrt(1 - mu ** 2) * np.cos(fi)
+        yp = sp * np.sqrt(1 - mu ** 2) * np.sin(fi)
+        zp = sp * mu
+        ax.plot([x0, xp], [y0, yp], [z0, zp])
+    elif (landa1 + landa2) < landa < (landa1 + landa2 + landa3):
+        a3 += 1
+        sp = (landa - landa1 - landa2) / mocsig3
+        xp = sp * np.sqrt(1 - mu ** 2) * np.cos(fi)
+        yp = sp * np.sqrt(1 - mu ** 2) * np.sin(fi)
+        zp = sp * mu
+        ax.plot([x0, xp], [y0, yp], [z0, zp])
+    else:
+        a4 += 1
+
+ax.set_xlabel('x axis')
+ax.set_ylabel('y axis')
+ax.set_zlabel('z axis')
+plt.title('Particle Interactions')
+plt.show()
